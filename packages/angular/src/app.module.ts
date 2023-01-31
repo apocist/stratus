@@ -7,6 +7,7 @@
 import {cookie} from '@stratusjs/core/environment'
 
 // Angular Core
+// import { CommonModule } from '@angular/common' // testing for ngZone
 import {HttpClientModule} from '@angular/common/http'
 import {
     ApplicationRef,
@@ -134,6 +135,10 @@ import {
     FroalaEditorModule,
     FroalaViewModule
 } from 'angular-froala-wysiwyg'
+import {FormioComponent} from '@stratusjs/form/src/components/formio/formio.component'
+import {FormioBaseComponent} from '@stratusjs/form/src/FormioBaseComponent'
+import {CustomTagsService} from '@stratusjs/form/src/custom-component/custom-tags.service'
+// import {FormioAlerts} from '@stratusjs/form/src/components/alerts/formio.alerts'
 
 // Quill Plugins
 // import {QuillInputButtonPlugin} from './editor/quill-input-button.plugin'
@@ -370,6 +375,7 @@ const monacoConfig: NgxMonacoEditorConfig = {
         BrowserModule,
         BrowserAnimationsModule,
         // CodeEditorModule.forRoot(),
+        // CommonModule, // testing for ngZone
         FlexLayoutModule,
         FormsModule,
         FroalaEditorModule.forRoot(),
@@ -392,6 +398,8 @@ const monacoConfig: NgxMonacoEditorConfig = {
         CodeViewDialogComponent,
         ConfirmDialogComponent,
         EditorComponent,
+        FormioBaseComponent,
+        FormioComponent,
         LinkDialogComponent,
         MapComponent,
         MediaDialogComponent,
@@ -413,6 +421,8 @@ const monacoConfig: NgxMonacoEditorConfig = {
         CodeViewDialogComponent,
         ConfirmDialogComponent,
         EditorComponent,
+        FormioBaseComponent,
+        FormioComponent,
         LinkDialogComponent,
         MapComponent,
         MediaDialogComponent,
@@ -429,7 +439,9 @@ const monacoConfig: NgxMonacoEditorConfig = {
     ],
     // bootstrap,
     providers: [
-        {provide: Window, useValue: window}
+        {provide: Window, useValue: window},
+        CustomTagsService,
+        // FormioAlerts
     ]
 })
 export class AppModule {
@@ -440,6 +452,7 @@ export class AppModule {
     modules = {
         'sa-base': BaseComponent,
         'sa-editor': EditorComponent,
+        'sa-form-formio': FormioComponent,
         'sa-map': MapComponent,
         'sa-media-selector': MediaSelectorComponent,
         'sa-selector': SelectorComponent,

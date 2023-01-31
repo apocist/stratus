@@ -1,0 +1,34 @@
+{
+  "name": "@stratusjs/form",
+  "version": "0.0.0",
+  "description": "Angular FormIO Builder/Renderer to be used as an add-on to StratusJS",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sitetheory/stratus.git"
+  },
+  "keywords": [
+    "sitetheory",
+    "stratus",
+    "angular",
+    "javascript",
+    "typescript",
+    "formio"
+  ],
+  "author": "Sitetheory Development Team (https://sitetheory.io/)",
+  "license": "mit",
+  "bugs": {
+    "url": "https://github.com/Sitetheory/stratus/issues"
+  },
+  "homepage": "https://github.com/Sitetheory/stratus#readme",
+  "engines": {
+    "yarn": ">= 1.21.1"
+  },
+  "dependencies": {
+    "formiojs": "4.14.12",
+    "@stratusjs/angular": "^0.5.11"
+  }
+}

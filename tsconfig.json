@@ -53,6 +53,9 @@
       "@stratusjs/core/*": [
         "packages/core/src/*"
       ],
+      "@stratusjs/form/*": [
+        "packages/form/src/*"
+      ],
       "@stratusjs/idx/*": [
         "packages/idx/src/*"
       ],

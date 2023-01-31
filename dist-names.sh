@@ -11,6 +11,7 @@ packages=(
   angularjs-extras
   calendar
   core
+  form
   idx
   map
   stripe
