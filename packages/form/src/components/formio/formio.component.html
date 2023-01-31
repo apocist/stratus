@@ -1,7 +1,9 @@
 <div role="form" [attr.aria-label]="label">
-    <!--<div *ngIf="isLoading && !hideLoading" style="position:relative;height:200px">
-        <formio-loader [isLoading]="isLoading"></formio-loader>
-    </div>-->
+    <div *ngIf="isLoading && !hideLoading" style="position:relative;height:200px">
+        <!--formio-loader [isLoading]="isLoading"></formio-loader-->
+        <!-- <mat-spinner></mat-spinner> -->
+    </div>
+    <!-- Don't use custom alerts... wait for global StratusJs flash -->
     <!--formio-alerts-- *ngIf="this.options.alertsPosition === AlertsPosition.top || this.options.alertsPosition === AlertsPosition.both" (focusComponent)="focusOnComponet($event)" [alerts]="alerts"></formio-alerts-->
     <div #formio></div>
     <!--formio-alerts *ngIf="this.options.alertsPosition === AlertsPosition.bottom || this.options.alertsPosition === AlertsPosition.both" (focusComponent)="focusOnComponet($event)" [alerts]="alerts"></formio-alerts-->

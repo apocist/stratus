@@ -1,8 +1,7 @@
 /**
  * @source https://github.com/formio/angular/blob/master/projects/angular-formio/src/FormioBaseComponent.ts
  */
-// NgZone
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Optional, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, OnInit, Optional, Output, ViewChild } from '@angular/core'
 import { FormioService } from './formio.service'
 import { FormioAlerts } from './components/alerts/formio.alerts'
 // import { FormioAppConfig } from './formio.config'
@@ -82,10 +81,10 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
     constructor(
         protected sanitizer: DomSanitizer,
         protected elementRef: ElementRef,
-        // protected ngZone: NgZone,
+        protected ngZone: NgZone,
         // @Optional() public config: FormioAppConfig,
-        // @Optional() public customTags?: CustomTagsService,
-        public customTags: CustomTagsService,
+        @Optional() public customTags?: CustomTagsService,
+        // public customTags: CustomTagsService,
     ) {
         super()
 
@@ -160,7 +159,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
             this.formio.setUrl(this.src, this.formioOptions || {})
         }
         this.formio.nosubmit = true
-        /*this.formio.on('prevPage', (data: any) => this.ngZone.run(() => this.onPrevPage(data)))
+        this.formio.on('prevPage', (data: any) => this.ngZone.run(() => this.onPrevPage(data)))
         this.formio.on('nextPage', (data: any) => this.ngZone.run(() => this.onNextPage(data)))
         this.formio.on('change', (value: any, flags: any, isModified: boolean) =>
             this.ngZone.run(() => this.onChange(value, flags, isModified)))
@@ -197,48 +196,10 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
         this.formio.on('render', () => this.ngZone.run(() => this.render.emit()))
         this.formio.on('formLoad', (loadedForm: any) =>
             this.ngZone.run(() => this.formLoad.emit(loadedForm))
-        )*/
-        this.formio.on('prevPage', (data: any) => this.onPrevPage(data))
-        this.formio.on('nextPage', (data: any) => this.onNextPage(data))
-        this.formio.on('change', (value: any, flags: any, isModified: boolean) =>
-            this.onChange(value, flags, isModified))
-        this.formio.on('rowAdd', (component: any) =>  this.rowAdd.emit(component))
-        this.formio.on('rowAdded', (data: any, component: any) =>  this.rowAdded.emit({component, row: data}))
-        this.formio.on('rowEdit', (data: any, rowIndex: number, index: number, component: any) =>
-            this.rowEdit.emit({component, row: data, rowIndex, index}))
-        this.formio.on('rowEdited', (data: any, rowIndex: number, component: any) =>
-            this.rowEdited.emit({component, row: data, rowIndex}))
-        this.formio.on('rowDelete', (data: any, rowIndex: number, index: number, component: any) =>
-            this.rowDelete.emit({component, row: data, rowIndex, index}))
-        this.formio.on('rowClick', (row: any, rowIndex: number, index: number,component: any) =>
-            this.rowClick.emit({component, row, rowIndex, index}))
-        this.formio.on('rowSelectChange', (selectedRows: any[], component: any) =>
-            this.rowSelectChange.emit({selectedRows, component}))
-        this.formio.on('customEvent', (event: any) =>
-            this.customEvent.emit(event)
-        );
-
-        ['fileUploadingStart', 'fileUploadingEnd'].forEach((eventName: string, index: any) => {
-            const status = !!index ? 'end' : 'start'
-            this.formio.on(eventName, () =>
-                this.fileUploadingStatus.emit(status)
-            )
-        })
-
-        this.formio.on('submit', (submission: any, saved: boolean) =>
-            this.submitForm(submission, saved)
-        )
-        this.formio.on('error', (err: any) => {
-            this.submissionSuccess = false
-            return this.onError(err)
-        })
-        this.formio.on('render', () => this.render.emit())
-        this.formio.on('formLoad', (loadedForm: any) =>
-            this.formLoad.emit(loadedForm)
         )
 
         return this.formio.ready.then(() => {
-            /*this.ngZone.run(() => {
+            this.ngZone.run(() => {
                 this.isLoading = false
                 this.ready.emit(this)
                 this.formioReadyResolve(this.formio)
@@ -247,15 +208,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
                         this.submissionLoad.emit(submission)
                     })
                 }
-            })*/
-            this.isLoading = false
-            this.ready.emit(this)
-            this.formioReadyResolve(this.formio)
-            if (this.formio.submissionReady) {
-                this.formio.submissionReady.then((submission: unknown) => {
-                    this.submissionLoad.emit(submission)
-                })
-            }
+            })
             return this.formio
         })
     }
@@ -317,6 +270,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
 
         if (this.success) {
             this.success.subscribe((message: string) => {
+                // FIXME use Stratus Flash
                 this.alerts.setAlert({
                     type: 'success',
                     message: message || get(this.options, 'alerts.submitMessage')
@@ -339,10 +293,9 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
             this.service.loadForm({ params: { live: 1 } }).subscribe(
                 (form: FormioForm) => {
                     if (form && form.components) {
-                        /*this.ngZone.runOutsideAngular(() => {
+                        this.ngZone.runOutsideAngular(() => {
                             this.setForm(form)
-                        })*/
-                        this.setForm(form)
+                        })
                     }
 
                     // if a submission is also provided.
@@ -406,10 +359,9 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
         this.initialize()
 
         if (changes.form && changes.form.currentValue) {
-            /*this.ngZone.runOutsideAngular(() => {
+            this.ngZone.runOutsideAngular(() => {
                 this.setForm(changes.form.currentValue)
-            })*/
-            this.setForm(changes.form.currentValue)
+            })
         }
 
         this.formioReady.then(() => {
@@ -458,6 +410,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
             this.submit.emit(submission)
         }
         if (!this.success) {
+            // FIXME use StratusJs Flash
             this.alerts.setAlert({
                 type: 'success',
                 message: get(this.options, 'alerts.submitMessage')
@@ -517,6 +470,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
                         const components = Array.isArray(component) ? component : [component]
                         const messageText = Array.isArray(message) ? message[index] : message
                         components.forEach((comp) => comp.setCustomValidity(messageText, true))
+                        // FIXME use StratusJs Flash
                         this.alerts.addAlert({
                             type: 'danger',
                             message: message[index],
@@ -542,6 +496,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
             }
 
             if (shouldErrorDisplay) {
+                // FIXME use StratusJs Flash
                 this.alerts.addAlert({
                     type: 'danger',
                     message,
@@ -551,7 +506,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
         })
     }
 
-    focusOnComponet(key: any) {
+    focusOnComponet(key: any) { // FIXME typo?
         if (this.formio) {
             this.formio.focusOnComponent(key)
         }

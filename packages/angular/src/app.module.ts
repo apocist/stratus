@@ -74,7 +74,7 @@ import {
 /* */
 
 // External Dependencies
-import _ from 'lodash'
+import _, {extend} from 'lodash'
 import {Stratus} from '@stratusjs/runtime/stratus'
 
 // Highlight.js
@@ -135,9 +135,11 @@ import {
     FroalaEditorModule,
     FroalaViewModule
 } from 'angular-froala-wysiwyg'
-import {FormioComponent} from '@stratusjs/form/src/components/formio/formio.component'
-import {FormioBaseComponent} from '@stratusjs/form/src/FormioBaseComponent'
-import {CustomTagsService} from '@stratusjs/form/src/custom-component/custom-tags.service'
+
+import {FormPackage} from '../../form/src/form.module'
+// import {FormioComponent} from '../../form/src/components/formio/formio.component'
+// import {FormioBaseComponent} from '../../form/src/FormioBaseComponent'
+// import {CustomTagsService} from '../../form/src/custom-component/custom-tags.service'
 // import {FormioAlerts} from '@stratusjs/form/src/components/alerts/formio.alerts'
 
 // Quill Plugins
@@ -368,80 +370,109 @@ const monacoConfig: NgxMonacoEditorConfig = {
 }
 /* */
 
+// These are for external libraries (or Angular)
+const ngModuleImports: any[] = [
+    // AngularModules,
+    BrowserModule,
+    BrowserAnimationsModule,
+    // CodeEditorModule.forRoot(),
+    FlexLayoutModule,
+    FormsModule,
+    FroalaEditorModule.forRoot(),
+    FroalaViewModule.forRoot(),
+    GoogleMapsModule, // FIXME move to @stratusjs/map StratusPackage
+    HttpClientModule,
+    MaterialModules,
+    MatNativeDateModule,
+    ReactiveFormsModule,
+    // AngularEditorModule,
+    // Outline: https://app.asana.com/0/1154407311832843/1184252847388849
+    // QuillModule.forRoot(quillConfig),
+    // MonacoEditorModule.forRoot(monacoConfig)
+    // SelectorComponent.forRoot()
+]
+
+// These determine what exists as a component within Angular system.
+const ngDeclarations: any[] = [
+    BaseComponent,
+    CitationDialogComponent,
+    CodeViewDialogComponent,
+    ConfirmDialogComponent,
+    EditorComponent,
+    LinkDialogComponent,
+    MapComponent, // FIXME move to @stratusjs/map StratusPackage
+    MediaDialogComponent,
+    MediaSelectorComponent,
+    SelectorComponent,
+    StripePaymentMethodComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodItemComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodListComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodSelectorComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripeSetupIntentComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    TreeComponent,
+    TreeDialogComponent,
+    TreeNodeComponent,
+]
+
+// This determines what is accessible via DOM as a component. These must be listed in `ngDeclarations`.
+const ngEntryComponents: any[] = [
+    BaseComponent, // FIXME shouldn't be needed as doesn't load on DOM
+    CitationDialogComponent,
+    CodeViewDialogComponent,
+    ConfirmDialogComponent,
+    EditorComponent,
+    LinkDialogComponent,
+    MapComponent, // FIXME move to @stratusjs/map StratusPackage
+    MediaDialogComponent,
+    MediaSelectorComponent,
+    SelectorComponent,
+    StripePaymentMethodComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodItemComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodListComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripePaymentMethodSelectorComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    StripeSetupIntentComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    TreeComponent,
+    TreeDialogComponent,
+    TreeNodeComponent,
+]
+
+const appModuleComponents = {
+    'sa-base': BaseComponent,
+    'sa-editor': EditorComponent,
+    'sa-map': MapComponent, // FIXME move to @stratusjs/map StratusPackage
+    'sa-media-selector': MediaSelectorComponent,
+    'sa-selector': SelectorComponent,
+    'sa-stripe-payment-method-list': StripePaymentMethodListComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    'sa-stripe-payment-method-selector': StripePaymentMethodSelectorComponent, // FIXME move to @stratusjs/stripe StratusPackage
+    'sa-tree': TreeComponent
+}
+
+export type StratusPackage = {
+    stratusModule: any
+    stratusComponents?: {[key:string]: any}
+}
+
+// This detrimines what custom Stratus Packages we want loaded in and will handle it's own declarations
+const stratusPackages: StratusPackage[] = [
+    FormPackage
+]
+stratusPackages.forEach((stratusPackage) => {
+    ngModuleImports.push(stratusPackage.stratusModule)
+    if (stratusPackage.hasOwnProperty('stratusComponents')) {
+        extend(appModuleComponents, stratusPackage.stratusComponents)
+    }
+})
+
 @NgModule({
     // These are for external libraries (or Angular)
-    imports: [
-        // AngularModules,
-        BrowserModule,
-        BrowserAnimationsModule,
-        // CodeEditorModule.forRoot(),
-        // CommonModule, // testing for ngZone
-        FlexLayoutModule,
-        FormsModule,
-        FroalaEditorModule.forRoot(),
-        FroalaViewModule.forRoot(),
-        GoogleMapsModule, // Required by @stratusjs/map
-        HttpClientModule,
-        MaterialModules,
-        MatNativeDateModule,
-        ReactiveFormsModule,
-        // AngularEditorModule,
-        // Outline: https://app.asana.com/0/1154407311832843/1184252847388849
-        // QuillModule.forRoot(quillConfig),
-        // MonacoEditorModule.forRoot(monacoConfig)
-        // SelectorComponent.forRoot()
-    ],
-    // This determines what is accessible as a component. These must be listed in `declarations`.
-    entryComponents: [
-        BaseComponent,
-        CitationDialogComponent,
-        CodeViewDialogComponent,
-        ConfirmDialogComponent,
-        EditorComponent,
-        FormioBaseComponent,
-        FormioComponent,
-        LinkDialogComponent,
-        MapComponent,
-        MediaDialogComponent,
-        MediaSelectorComponent,
-        SelectorComponent,
-        StripePaymentMethodComponent,
-        StripePaymentMethodItemComponent,
-        StripePaymentMethodListComponent,
-        StripePaymentMethodSelectorComponent,
-        StripeSetupIntentComponent,
-        TreeComponent,
-        TreeDialogComponent,
-        TreeNodeComponent,
-    ],
-    // These determine what exists as a component. These must be listed in `entryComponents`.
-    declarations: [
-        BaseComponent,
-        CitationDialogComponent,
-        CodeViewDialogComponent,
-        ConfirmDialogComponent,
-        EditorComponent,
-        FormioBaseComponent,
-        FormioComponent,
-        LinkDialogComponent,
-        MapComponent,
-        MediaDialogComponent,
-        MediaSelectorComponent,
-        SelectorComponent,
-        StripePaymentMethodComponent,
-        StripePaymentMethodItemComponent,
-        StripePaymentMethodListComponent,
-        StripePaymentMethodSelectorComponent,
-        StripeSetupIntentComponent,
-        TreeComponent,
-        TreeDialogComponent,
-        TreeNodeComponent,
-    ],
+    imports: ngModuleImports,
+    // This determines what is accessible via DOM as a component. These must be listed in `declarations`.
+    entryComponents: ngEntryComponents,
+    // These determine what exists as a component within Angular system.
+    declarations: ngDeclarations,
     // bootstrap,
     providers: [
         {provide: Window, useValue: window},
-        CustomTagsService,
-        // FormioAlerts
     ]
 })
 export class AppModule {
@@ -449,17 +480,7 @@ export class AppModule {
     initialTimeout = 1000
     instances = {}
     // These modules will be hydrated directly in the HTML, and *cannot* load in a component template/dialog
-    modules = {
-        'sa-base': BaseComponent,
-        'sa-editor': EditorComponent,
-        'sa-form-formio': FormioComponent,
-        'sa-map': MapComponent,
-        'sa-media-selector': MediaSelectorComponent,
-        'sa-selector': SelectorComponent,
-        'sa-stripe-payment-method-list': StripePaymentMethodListComponent,
-        'sa-stripe-payment-method-selector': StripePaymentMethodSelectorComponent,
-        'sa-tree': TreeComponent
-    }
+    modules = appModuleComponents
 
     constructor() {
         Stratus.Instances[_.uniqueId('sa_app_module_')] = this

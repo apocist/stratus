@@ -4,12 +4,13 @@
 // NgZone
 import {
     Component,
-    // NgZone,
+    NgZone,
     OnInit,
     Optional,
     OnChanges,
     ViewEncapsulation, ElementRef,
 } from '@angular/core'
+import { Location, LocationStrategy } from '@angular/common'
 // import { FormioAppConfig } from '../../formio.config'
 import { Formio, Form } from 'formiojs'
 import { FormioBaseComponent } from '../../FormioBaseComponent'
@@ -40,22 +41,25 @@ export class FormioComponent extends FormioBaseComponent implements OnInit, OnCh
     constructor(
         protected sanitizer: DomSanitizer,
         protected elementRef: ElementRef,
-        // private ngZone: NgZone, // FIXME ngZone doesn't seem possible
-        // @Optional() public customTags?: CustomTagsService,
-        public customTags: CustomTagsService,
+        protected ngZone: NgZone, // FIXME ngZone doesn't seem possible
+        private locationStrategy: LocationStrategy,
+        @Optional() public customTags?: CustomTagsService,
+        // public customTags: CustomTagsService,
     ) {
         // super(ngZone, config, customTags)
         // super(ngZone, customTags)
-        super(sanitizer, elementRef, customTags)
+        super(sanitizer, elementRef, ngZone, customTags)
         // if (this.config) {
         // Formio.setBaseUrl(this.config.apiUrl)
-        Formio.setBaseUrl('')
+        // Formio.setBaseUrl('https://client.davis.sitetheory.io/') // FIXME get the current domain
+        console.log('setting baseUrl to', this.locationStrategy.getBaseHref())
+        Formio.setBaseUrl(this.locationStrategy.getBaseHref())
         // Formio.setProjectUrl(this.config.appUrl)
-        Formio.setProjectUrl('')
+        // Formio.setProjectUrl('')
         /*} else {
             console.warn('You must provide an AppConfig within your application!')
         }*/
-        console.log('FormioComponent loaded')
+        console.log('FormioComponent loaded', this)
     }
 
     getRenderer() {
