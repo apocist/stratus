@@ -6,7 +6,7 @@ import { FormioForm } from './formio.common'
 import { Formio } from 'formiojs'
 
 export class FormioService {
-    public formio: any
+    public formio: Formio
     constructor(public url: string, public options?: object) {
         this.formio = new Formio(this.url, this.options)
     }
@@ -49,7 +49,8 @@ export class FormioService {
         return this.requestWrapper(() => this.formio.userPermissions(user, form, submission))
     }
     deleteSubmission(data?: any, options?: any): Observable<{}> {
-        return this.requestWrapper(() => this.formio.deleteSubmission(data, options))
+        // @ts-ignore
+        return this.requestWrapper(() => this.formio.deleteSubmission(data, options)) // FIXME was this a typo?
     }
     saveSubmission(submission: {}, options?: any): Observable<{}> {
         return this.requestWrapper(() => this.formio.saveSubmission(submission, options))

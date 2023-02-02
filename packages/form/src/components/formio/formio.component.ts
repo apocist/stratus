@@ -1,7 +1,6 @@
 /**
  * @source https://github.com/formio/angular/blob/master/projects/angular-formio/src/components/formio/formio.component.ts
  */
-// NgZone
 import {
     Component,
     NgZone,
@@ -10,8 +9,7 @@ import {
     OnChanges,
     ViewEncapsulation, ElementRef,
 } from '@angular/core'
-import { Location, LocationStrategy } from '@angular/common'
-// import { FormioAppConfig } from '../../formio.config'
+import { LocationStrategy } from '@angular/common'
 import { Formio, Form } from 'formiojs'
 import { FormioBaseComponent } from '../../FormioBaseComponent'
 import { CustomTagsService } from '../../custom-component/custom-tags.service'
@@ -20,23 +18,18 @@ import {DomSanitizer} from '@angular/platform-browser'
 
 // Environment
 const packageName = 'form'
-const moduleName = 'formio'
+// const moduleName = 'formio'
 const componentName = 'formio'
 const systemDir = `@stratusjs/${packageName}`
 // Path to -this- folder
-const localDir = `${Stratus.BaseUrl}${boot.configuration.paths[`${systemDir}/*`].replace(/[^/]*$/, '').replace(/angular\/dist\/$/, `${packageName}/src/components/${moduleName}/`)}`
+const localDir = `${Stratus.BaseUrl}${boot.configuration.paths[`${systemDir}/*`].replace(/[^/]*$/, '').replace(/angular\/dist\/$/, `${packageName}/src/components/${componentName}/`)}`
 
-
-/* tslint:disable */
 @Component({
-    // selector: 'formio',
     selector: `sa-${packageName}-${componentName}`,
-    // templateUrl: './formio.component.html',
     templateUrl: `${localDir}/${componentName}.component.html`,
     // styleUrls: ['../../../../../node_modules/formiojs/dist/formio.form.min.css'],
     encapsulation: ViewEncapsulation.None,
 })
-/* tslint:enable */
 export class FormioComponent extends FormioBaseComponent implements OnInit, OnChanges {
     constructor(
         protected sanitizer: DomSanitizer,
@@ -52,7 +45,7 @@ export class FormioComponent extends FormioBaseComponent implements OnInit, OnCh
         // if (this.config) {
         // Formio.setBaseUrl(this.config.apiUrl)
         // Formio.setBaseUrl('https://client.davis.sitetheory.io/') // FIXME get the current domain
-        console.log('setting baseUrl to', this.locationStrategy.getBaseHref())
+        // console.log('setting baseUrl to', this.locationStrategy.getBaseHref())
         Formio.setBaseUrl(this.locationStrategy.getBaseHref())
         // Formio.setProjectUrl(this.config.appUrl)
         // Formio.setProjectUrl('')

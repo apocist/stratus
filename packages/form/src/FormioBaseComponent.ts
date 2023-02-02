@@ -63,10 +63,10 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
     @Output() formLoad = new EventEmitter<any>()
     @Output() submissionLoad = new EventEmitter<any>()
     @Output() ready = new EventEmitter<FormioBaseComponent>()
-    @ViewChild('formio', { static: true }) formioElement?: ElementRef<any>
+    @ViewChild('formio', { static: true }) formioElement?: ElementRef
 
     public AlertsPosition = AlertsPosition
-    public formio: any
+    public formio: any // unknown?
     public initialized = false
     public alerts = new FormioAlerts()
     public formioReady: Promise<any>
@@ -247,7 +247,7 @@ export class FormioBaseComponent extends RootComponent implements OnInit, OnChan
         Utils.Evaluator.noeval = this.noeval
         this.initialize()
 
-        console.log('FormBase ngOnInit')
+        // console.log('FormBase ngOnInit')
         if (this.language) {
             if (typeof this.language === 'string') {
                 this.formio.language = this.language

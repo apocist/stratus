@@ -137,10 +137,6 @@ import {
 } from 'angular-froala-wysiwyg'
 
 import {FormPackage} from '../../form/src/form.module'
-// import {FormioComponent} from '../../form/src/components/formio/formio.component'
-// import {FormioBaseComponent} from '../../form/src/FormioBaseComponent'
-// import {CustomTagsService} from '../../form/src/custom-component/custom-tags.service'
-// import {FormioAlerts} from '@stratusjs/form/src/components/alerts/formio.alerts'
 
 // Quill Plugins
 // import {QuillInputButtonPlugin} from './editor/quill-input-button.plugin'
