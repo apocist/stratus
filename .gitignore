@@ -63,6 +63,9 @@ packages/calendar/src/**/*.js.map
 packages/calendar/src/**/*.css
 packages/core/src/**/*.js
 packages/core/src/**/*.js.map
+packages/form/src/**/*.js
+packages/form/src/**/*.js.map
+packages/form/src/**/*.css
 packages/idx/src/**/*.js
 packages/idx/src/**/*.js.map
 packages/idx/src/**/*.css
