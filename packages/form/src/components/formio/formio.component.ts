@@ -15,6 +15,7 @@ import { FormioBaseComponent } from '../../FormioBaseComponent'
 import { CustomTagsService } from '../../custom-component/custom-tags.service'
 import {Stratus} from '@stratusjs/runtime/stratus'
 import {DomSanitizer} from '@angular/platform-browser'
+import {safeUniqueId} from '@stratusjs/core/misc'
 
 // Environment
 const packageName = 'form'
@@ -34,24 +35,17 @@ export class FormioComponent extends FormioBaseComponent implements OnInit, OnCh
     constructor(
         protected sanitizer: DomSanitizer,
         protected elementRef: ElementRef,
-        protected ngZone: NgZone, // FIXME ngZone doesn't seem possible
+        protected ngZone: NgZone,
         private locationStrategy: LocationStrategy,
         @Optional() public customTags?: CustomTagsService,
-        // public customTags: CustomTagsService,
     ) {
-        // super(ngZone, config, customTags)
-        // super(ngZone, customTags)
         super(sanitizer, elementRef, ngZone, customTags)
-        // if (this.config) {
-        // Formio.setBaseUrl(this.config.apiUrl)
-        // Formio.setBaseUrl('https://client.davis.sitetheory.io/') // FIXME get the current domain
+        this.uid = safeUniqueId('sa', packageName, componentName, 'component')
+        Stratus.Instances[this.uid] = this
+
         // console.log('setting baseUrl to', this.locationStrategy.getBaseHref())
         Formio.setBaseUrl(this.locationStrategy.getBaseHref())
-        // Formio.setProjectUrl(this.config.appUrl)
         // Formio.setProjectUrl('')
-        /*} else {
-            console.warn('You must provide an AppConfig within your application!')
-        }*/
         console.log('FormioComponent loaded', this)
     }
 

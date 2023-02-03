@@ -21,13 +21,14 @@ import {
     FormioOptions
 } from '../../formio.common'
 import { Formio, FormBuilder, Utils } from 'formiojs'
-import { assign } from 'lodash'
+import { assign, isEmpty, isUndefined } from 'lodash'
 import { Observable, Subscription } from 'rxjs'
 import { CustomTagsService } from '../../custom-component/custom-tags.service'
-import {RootComponent} from '../../../../angular/src/core/root.component'
+import {RootComponent} from '../../../../angular/src/core/root.component' // use the direct path
 import {DomSanitizer} from '@angular/platform-browser'
 import {LocationStrategy} from '@angular/common'
 import {keys} from 'ts-transformer-keys'
+import {isJSON, safeUniqueId} from '@stratusjs/core/misc'
 
 // Environment
 const packageName = 'form'
@@ -43,7 +44,6 @@ const formioCssPath = `${Stratus.BaseUrl}${boot.configuration.paths.formiojs}.cs
 
 @Component({
     selector: `sa-${packageName}-${componentName}`,
-    // templateUrl: `${localDir}/${componentName}.component.html`,
     template: '<div #builder></div>',
     // styleUrls: ['../../../../../node_modules/formiojs/dist/formio.builder.min.css'],
     encapsulation: ViewEncapsulation.None
@@ -51,13 +51,14 @@ const formioCssPath = `${Stratus.BaseUrl}${boot.configuration.paths.formiojs}.cs
 export class FormBuilderComponent extends RootComponent implements OnInit, OnChanges, OnDestroy {
     public ready: Promise<object>
     public readyResolve: any
-    public formio: any
+    public formio: any // Formio not fully typed
     public builder: FormBuilder
     public componentAdding = false
     private refreshSubscription: Subscription
-    @Input() form?: FormioForm
+    @Input() schema: string // Setup to allow formSchema on creation. Then schema only outputs
+    @Input() form?: FormioForm // Input form...as object.. TODO use schema on load and convert to FormioForm
     @Input() options?: FormioOptions
-    @Input() formbuilder?: any
+    @Input() formbuilder?: any // FormBuilder as class
     @Input() noeval ? = false
     @Input() refreshNow?: Observable<void>
     @Input() rebuild?: Observable<object>
@@ -72,6 +73,10 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         @Optional() public customTags?: CustomTagsService,
     ) {
         super()
+        this.uid = safeUniqueId('sa', packageName, componentName, 'component')
+        Stratus.Instances[this.uid] = this
+
+        // TODO update this.builder.helpLinks: string (it's set to formio)
 
         this.hydrate(elementRef, sanitizer, keys<FormBuilderComponent>())
         // Stratus.Internals.CssLoader(`${formioCssPath}`)
@@ -101,6 +106,18 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         console.log('FormBuilderComponent loaded', this)
     }
 
+    initVariables() {
+        if (
+            isUndefined(this.form) && !isEmpty(this.schema) &&
+            isJSON(this.schema)
+        ) {
+            this.form = JSON.parse(this.schema)
+        } else if(isUndefined(this.form)) {
+            // Make some kind of default form to not break everything
+            this.form = {components: []}
+        }
+    }
+
     ngOnInit() {
         Utils.Evaluator.noeval = this.noeval
 
@@ -108,15 +125,16 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
             console.log('running refreshNow on event', this.refreshNow)
             this.refreshSubscription = this.refreshNow.subscribe(() => {
                 this.ngZone.runOutsideAngular(() => {
+                    this.initVariables()
                     this.buildForm(this.form)
                 })
             })
         } else {
             // If refreshNow isn't set, we need some kind of way to instantiate
             this.ngZone.runOutsideAngular(() => {
-                // this.buildForm(this.form)
-                // FIXME need to provide some form options
-                this.buildForm({components: []})
+                this.initVariables()
+                // FIXME need to provide some form options?
+                this.buildForm(this.form)
             })
         }
 
@@ -141,10 +159,12 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
                 if (isNew) {
                     this.componentAdding = true
                 } else {
+                    this.schema = JSON.stringify(instance.schema)
                     this.change.emit({
                         type: 'addComponent',
                         builder: instance,
                         form: instance.schema,
+                        schema: this.schema,
                         component,
                         parent,
                         path,
@@ -156,10 +176,12 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         })
         instance.on('saveComponent', (component: any, original: any, parent: any, path: any, index: number, isNew: boolean) => {
             this.ngZone.run(() => {
+                this.schema = JSON.stringify(instance.schema)
                 this.change.emit({
                     type: this.componentAdding ? 'addComponent' : 'saveComponent',
                     builder: instance,
                     form: instance.schema,
+                    schema: this.schema,
                     component,
                     originalComponent: original,
                     parent,
@@ -172,20 +194,25 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         })
         instance.on('updateComponent', (component: any) => {
             this.ngZone.run(() => {
+                this.schema = JSON.stringify(instance.schema)
                 this.change.emit({
                     type: 'updateComponent',
                     builder: instance,
                     form: instance.schema,
+
+                    schema: this.schema,
                     component
                 })
             })
         })
         instance.on('removeComponent', (component: any, parent: any, path: any, index: number) => {
             this.ngZone.run(() => {
+                this.schema = JSON.stringify(instance.schema)
                 this.change.emit({
                     type: 'deleteComponent',
                     builder: instance,
                     form: instance.schema,
+                    schema: this.schema,
                     component,
                     parent,
                     path,
@@ -196,16 +223,17 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         this.ngZone.run(() => {
             this.readyResolve(instance)
         })
+        this.schema = JSON.stringify(instance.schema)
         return instance
     }
 
     setDisplay(display: string, prevDisplay?: string) {
         if (display && display !== prevDisplay) {
-            (this.builder as any).setDisplay(display)
+            this.builder.setDisplay(display)
         }
     }
 
-    buildForm(form: any, prevForm?: any) {
+    buildForm(form: FormioForm, prevForm?: FormioForm) {
         // console.log('buildForm ran')
         if (!form || !this.builderElement || !this.builderElement.nativeElement) {
             console.warn('formbuilder::buildForm had no object, cannot continue')
@@ -223,7 +251,7 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         return this.rebuildForm(form)
     }
 
-    rebuildForm(form: any, options?: object) {
+    rebuildForm(form: FormioForm, options?: object) {
         // console.log('rebuildForm ran')
         const Builder = this.formbuilder || FormBuilder
         const extraTags = this.customTags ? this.customTags.tags : []
