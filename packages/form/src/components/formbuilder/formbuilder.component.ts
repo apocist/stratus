@@ -21,14 +21,21 @@ import {
     FormioOptions
 } from '../../formio.common'
 import { Formio, FormBuilder, Utils } from 'formiojs'
-import { assign, isEmpty, isUndefined } from 'lodash'
-import { Observable, Subscription } from 'rxjs'
+import { assign, clone, isEmpty, isString, isUndefined } from 'lodash'
+import {Observable, ObservableInput, Subject, Subscriber, Subscription, timer} from 'rxjs'
+import {catchError, debounce} from 'rxjs/operators'
 import { CustomTagsService } from '../../custom-component/custom-tags.service'
 import {RootComponent} from '../../../../angular/src/core/root.component' // use the direct path
 import {DomSanitizer} from '@angular/platform-browser'
 import {LocationStrategy} from '@angular/common'
 import {keys} from 'ts-transformer-keys'
 import {isJSON, safeUniqueId} from '@stratusjs/core/misc'
+import {Registry} from '@stratusjs/angularjs/services/registry'
+import {Collection} from '@stratusjs/angularjs/services/collection'
+import {Model} from '@stratusjs/angularjs/services/model'
+import {EventBase} from '../../../../core/src/events/eventBase' // use the direct path
+import {EventManager} from '../../../../core/src/events/eventManager' // use the direct path
+
 
 // Environment
 const packageName = 'form'
@@ -49,6 +56,23 @@ const formioCssPath = `${Stratus.BaseUrl}${boot.configuration.paths.formiojs}.cs
     encapsulation: ViewEncapsulation.None
 })
 export class FormBuilderComponent extends RootComponent implements OnInit, OnChanges, OnDestroy {
+    // Stratus Data Connectivity
+    registry = new Registry()
+    fetched: Promise<boolean|Collection|Model>
+    data: any
+    collection?: EventBase
+    // @Output() model: any;
+    @Input() model?: Model
+    @Input() property: string
+
+    // Observable Connection
+    dataSub: Observable<[]>
+    onChange = new Subject()
+    subscriber: Subscriber<any>
+    incomingData = ''
+    outgoingData = ''
+
+    public initialized: boolean
     public ready: Promise<object>
     public readyResolve: any
     public formio: any // Formio not fully typed
@@ -102,10 +126,11 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
             this.readyResolve = resolve
         })
 
+        this.initDataConnectivity()
+
         // FIXME we need to translate this.form into any object if its a string
         console.log('FormBuilderComponent loaded', this)
     }
-
     initVariables() {
         if (
             isUndefined(this.form) && !isEmpty(this.schema) &&
@@ -115,6 +140,9 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         } else if(isUndefined(this.form)) {
             // Make some kind of default form to not break everything
             this.form = {components: []}
+        }
+        if (isString(this.form)) {
+            console.warn('formbuilder::form provided as "string", invalid parameter. Did you mean to use schema?', this.form)
         }
     }
 
@@ -146,6 +174,8 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
                 })
             })
         }
+
+        this.initialized = true
     }
 
     setInstance(instance: any) {
@@ -286,5 +316,152 @@ export class FormBuilderComponent extends RootComponent implements OnInit, OnCha
         if (this.formio) {
             this.formio.destroy()
         }
+    }
+
+    /////////////////////
+    // Data connectivity functionality
+    /////////////
+
+    initDataConnectivity() {
+        this.fetchData()
+            .then(data => {
+                if (!data || !(data instanceof EventManager)) {
+                    console.warn('Unable to bind data from Registry!')
+                    return
+                }
+                // Manually render upon model change
+                // this.ref.detach();
+                const onDataChange = () => {
+                    if (!data.completed) {
+                        return
+                    }
+                    // this.onDataChange();
+                    this.dataDefer(this.subscriber)
+                    // TODO: Add a debounce so we don't attempt to update multiple times while the model is changing.
+                    // this.refresh()
+                    // FIXME: Somehow this doesn't completely work...  It gets data from the model
+                    // when it is changed, but won't propagate it when the form event changes the data.
+                }
+                data.on('change', onDataChange)
+                onDataChange()
+            })
+
+        // Declare Observable with Subscriber (Only Happens Once)
+        // TODO: Test if the observable is necessary in any way...
+        this.dataSub = new Observable(subscriber => {
+            // if (this.dev) {
+                console.warn(`[observable] creating subscriber on ${this.uid}`, subscriber)
+            // }
+            return this.dataDefer(subscriber)
+        })
+        this.dataSub.pipe(
+            // debounceTime(250),
+            debounce(() => timer(250)),
+            catchError(this.handleDataError)
+        ).subscribe(evt => {
+            // While the editor is focused, we skip debounce updates to avoid cursor glitches
+            /*if (this.focused) {
+                if (this.dev) {
+                    console.warn(`[subscriber] waiting on updates due to focus on ${this.uid}`)
+                }
+                return
+            }*/
+            // TODO: This may need to only work on blur and not focus, unless it is the initialization value
+            /*const dataControl = this.form.get('dataString') // FIXME two different forms and FormBuilders
+            if (dataControl.value === evt) {
+                // In the case of data being edited by the code view or something else,
+                // we need to refresh the UI, as long as it has been initialized.
+                if (this.initialized) {
+                    this.refresh().then()
+                }
+                return
+            }
+            dataControl.patchValue(evt)
+            // Note: A refresh may be necessary if things become less responsive
+            this.refresh()*/ // This may not be doing the right refresh
+        })
+    }
+
+    fetchData() {
+        if (this.fetched) {
+            return this.fetched
+        }
+        return this.fetched = this.registry.fetch(
+            Stratus.Select(this.elementRef.nativeElement),
+            this
+        )
+    }
+
+    // Ensures Data is populated before hitting the Subscriber
+    dataDefer(subscriber: Subscriber<any>) {
+        this.subscriber = this.subscriber || subscriber
+        if (!this.subscriber) {
+            // if (this.dev) {
+                console.warn(`[defer] debouncing due to empty subscriber on ${this.uid}`)
+            // }
+            setTimeout(() => {
+                // if (this.dev) {
+                    console.warn(`[defer] debounced subscriber returned on ${this.uid}`)
+                // }
+                this.dataDefer(subscriber)
+            }, 250)
+            return
+        }
+        const prevString = clone(this.incomingData)
+        const dataString = this.dataRef()
+        // ensure changes have occurred
+        if (prevString === dataString) {
+            return
+        }
+        if (!dataString && (!this.data || !this.data.completed)) {
+            // if (this.dev) {
+                console.warn(`[defer] debouncing subscriber due to unavailable data on ${this.uid}`, this.data)
+            // }
+            setTimeout(() => {
+                // if (this.dev) {
+                    console.warn(`[defer] debounced subscriber returned on ${this.uid}`)
+                // }
+                this.dataDefer(subscriber)
+            }, 250)
+            return
+        }
+        // if (this.dev) {
+            console.warn(`[subscriber] new value submitted on ${this.uid}:`, dataString)
+        // }
+        this.subscriber.next(dataString)
+        // TODO: Add a returned Promise to ensure async/await can use this defer directly.
+    }
+
+    dataRef(): string {
+        if (!this.model) {
+            return ''
+        }
+        return this.incomingData = this.normalizeIn(
+            this.model.get(this.property)
+        )
+    }
+
+    normalizeIn(data?: string): string {
+        // Normalize non-string values to strings.
+        if (!data || !isString(data)) {
+            return ''
+        }
+        return data
+    }
+    normalizeOut(data?: string): string {
+        // Normalize null values to empty strings to maintain consistent typing.
+        if (data === null) {
+            return ''
+        }
+        if (!isString(data)) {
+            // TODO: look into either piping the data here to remove `fr-original-style`
+            return data
+        }
+        return data
+    }
+
+    handleDataError(err: ObservableInput<any>): ObservableInput<any> {
+        console.error(err)
+        return err
     }
 }
